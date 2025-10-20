@@ -41,6 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 #firbase configuration
-firebase/admin.ts
-firebase/client.ts
+
 
