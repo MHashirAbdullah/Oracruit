@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { interviewer } from "@/constants";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -22,7 +23,21 @@ interface AgentProps {
   type: string;
 }
 
-const Agent = ({ userName, userId, type }: AgentProps) => {
+interface AgentProps {
+  userName: string;
+  userId: string;
+  type: string;
+  questions: string[]; // Added questions property
+  interviewId: string;
+}
+
+const Agent = ({
+  userName,
+  userId,
+  type,
+  questions,
+  interviewId,
+}: AgentProps) => {
   const router = useRouter();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
@@ -61,10 +76,26 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
     };
   }, []);
 
+  const handleGenerateFeedback = async (messages: SavedMessage[]) => {
+    console.log("Generate Feedback here.");
+    const { success, id } = {
+      success: true,
+      id: "feedback-id",
+    };
+    if (success && id) {
+      router.push(`/interview/${interviewId}/feedback`);
+    } else {
+      console.log("Error saving FeedBack");
+      router.push("/");
+    }
+  };
+
   useEffect(() => {
     if (callStatus === CallStatus.FINISHED) {
       if (type === "generate") {
         router.push("/");
+      } else {
+        handleGenerateFeedback(messages);
       }
     }
   }, [messages, callStatus, type, userId]);
@@ -76,28 +107,41 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
     try {
       // Use new VAPI Workflow start signature!
       setCallStatus(CallStatus.CONNECTING);
-
-      //for running using assistant id.
-      // await vapi.start(
-      //   process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID,
-      //    {
-      //   variableValues: {
-      //     username: userName,
-      //     userid: userId,
-      //   },
-      // });
-      await vapi.start(
-        undefined, // assistantId (leave undefined if using workflow)
-        undefined, // squadId (if you don't use squads)
-        undefined, // provider (leave undefined)
-        process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID,
-        {
-          variableValues: {
-            username: userName,
-            userid: userId,
-          },
+      if (type === "generate") {
+        //for running using assistant id.
+        // await vapi.start(
+        //   process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID,
+        //    {
+        //   variableValues: {
+        //     username: userName,
+        //     userid: userId,
+        //   },
+        // });
+        await vapi.start(
+          undefined, // assistantId (leave undefined if using workflow)
+          undefined, // squadId (if you don't use squads)
+          undefined, // provider (leave undefined)
+          process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID,
+          {
+            variableValues: {
+              username: userName,
+              userid: userId,
+            },
+          }
+        );
+      } else {
+        let formattedQuestions = "";
+        if (questions) {
+            formattedQuestions = questions
+            .map((question: string) => `-${question}`)
+            .join("\n");
         }
-      );
+        await vapi.start(interviewer,{
+          variableValues:{
+            questions : formattedQuestions
+          }
+        })
+      }
     } catch (err: any) {
       setError(err?.message ?? "Could not start VAPI interview.");
       setCallStatus(CallStatus.INACTIVE);
