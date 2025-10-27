@@ -58,6 +58,12 @@ export async function signIn(params: SignInParams) {
   }
 }
 
+export async function logOut() {
+  const cookieStore = await cookies();
+  cookieStore.delete("session"); // Replace with your cookie key
+  return true;
+}
+
 export async function setSessionCookie(idToken: string) {
   const cookieStore = await cookies();
 

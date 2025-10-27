@@ -4,18 +4,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import React, { ReactNode } from "react";
 import logo from "@/public/logo.svg";
+import LogoutButton from '@/components/LogoutButton';
 const RootLayout = async ({ children }: { children: ReactNode }) => {
   const isUserAuthenticated = await isAuthenticated();
   if (!isUserAuthenticated) {
-    redirect('/sign-in')
+    redirect("/sign-in");
   }
   return (
     <div className="root-layout">
-      <nav>
+      <nav className="flex justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image src={logo} alt="logo" width={38} height={32} />
           <h2 className="text-primary-100">OraCruit</h2>
         </Link>
+        <LogoutButton/>
       </nav>
       {children}
     </div>
